@@ -45,7 +45,7 @@ const MenuState = {
       row.className = "poi";
       row.style.alignItems = "flex-start";
 
-      const portrait = image(char.portrait, { width: "200px", height: "280px", alt: char.name });
+      const portrait = image(char.portrait, { width: "215px", height: "275px", alt: char.name });
       portrait.style.flex = "none";
       row.appendChild(portrait);
 
