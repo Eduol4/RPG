@@ -112,7 +112,7 @@ export const Game = {
   root: null,          // o <div id="screen"> onde tudo é desenhado
   states: {},          // registro de estados: { nome: objetoEstado }
   current: null,       // estado ativo
-  ctx: {},             // "contexto" compartilhado: juri hantual, run atual, etc.
+  ctx: {},             // "contexto" compartilhado: personagem atual, run atual, etc.
 
   init(rootEl) {
     this.root = rootEl;

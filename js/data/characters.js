@@ -38,7 +38,7 @@ export const CHARACTERS = {
     stats: { maxHp: 15, atk: 5, def: 0 },
     startingKit: [],
     intro: "Forte e ágil, equilibrada em todos os atributos.",
-    defeatMessage: "Juri Han foi derrotada — mas não morreu. Ela recomeça.",
+    defeatMessage: "Juri Han foi derrotada com mais facilidade do que gostaria de admitir...",
   },
 
   mina_ha: {
@@ -56,7 +56,7 @@ export const CHARACTERS = {
     stats: { maxHp: 10, atk: 3, def: 0 },
     startingKit: ["pocao_pequena"],
     intro: "Frágil, mas tem outras vantagens em comparação.",
-    defeatMessage: "Mina Ha foi derrotada — mas não morreu. Ela recomeça.",
+    defeatMessage: "Mina Ha foi colocada em seu devido lugar.",
   },
 
 };
