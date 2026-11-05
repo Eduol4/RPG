@@ -9,15 +9,15 @@ export const ENEMIES = {
     id: "slime",
     name: "Slime",
     sprite: "inimigo_slime.png",
-    hp: 12, atk: 4, def: 1,
-    goldReward: 5, expReward: 8,
+    hp: 12, atk: 3, def: 0,
+    goldReward: 3, expReward: 5,
   },
-  morcego: {
-    id: "morcego",
-    name: "Morcego",
-    sprite: "inimigo_morcego.png",
-    hp: 8, atk: 6, def: 0,
-    goldReward: 7, expReward: 10,
+  bandido_pequeno: {
+    id: "bandido_pequeno",
+    name: "Bandido pequeno",
+    sprite: "inimigo_bandido_pequeno.png",
+    hp: 18, atk: 6, def: 0,
+    goldReward: 7, expReward: 8,
   },
 };
 

@@ -24,9 +24,9 @@ export const ROOM_THEMES = {
     // tabela de sorteio: cada entrada tem um peso relativo
     pool: [
       { type: "enemy", ref: "slime",   weight: 4 },
-      { type: "enemy", ref: "morcego", weight: 3 },
-      { type: "item",  ref: "pocao_pequena", weight: 2 },
-      { type: "npc",   ref: "andarilho", weight: 1 },
+      { type: "enemy", ref: "bandido_pequeno", weight: 3 },
+      { type: "item",  ref: "pocao_pequena", weight: 1 },
+      { type: "npc",   ref: "andarilho", weight: 2 },
     ],
   },
 };

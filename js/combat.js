@@ -17,7 +17,7 @@ export const CombatState = {
     const { run, enemyRef, poiId } = ctx.combat;
     const enemy = getEnemy(enemyRef);
 
-    // --- dificuldade da personagem afeta o inimigo ---
+    // --- dificuldade da juri hanfeta o inimigo ---
     const diff = run.character.difficulty;
     const enemyHp  = Math.round(enemy.hp  * diff.enemyHpMult);
     const enemyDmg = Math.round(enemy.atk * diff.enemyDmgMult);
