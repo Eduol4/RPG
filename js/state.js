@@ -73,6 +73,26 @@ export const Save = {
     return !!this.forCharacter(characterId).memoryFlags[flag];
   },
 
+  /* ---------- RUN EM PROGRESSO (pausável) ----------
+     Guarda um "snapshot" da run atual para o botão "Continuar" do menu.
+     Fica no save da personagem, então sobrevive a recarregar a página.
+     É limpa ao vencer, perder ou abandonar a run. */
+  setActiveRun(characterId, snapshot) {
+    const save = this.forCharacter(characterId);
+    save.activeRun = snapshot;
+    this._persist();
+  },
+
+  getActiveRun(characterId) {
+    return this.forCharacter(characterId).activeRun || null;
+  },
+
+  clearActiveRun(characterId) {
+    const save = this.forCharacter(characterId);
+    save.activeRun = null;
+    this._persist();
+  },
+
   /* Apaga TUDO (botão de reset). A derrota NUNCA chama isto —
      derrota é progressão, não permadeath. */
   wipe(characterId) {

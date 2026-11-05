@@ -7,8 +7,11 @@
    Campos:
    - id:         identificador único (usado como chave do save). Não repita.
    - name:       nome exibido.
-   - portrait:   arquivo em assets/img/ (pode ainda não existir).
+   - portrait:   arquivo em assets/img/ (pode ainda não existir). Usado no menu.
+   - combatImg:  imagem usada nas telas de combate e de NPC (substitui o
+                 retrato SÓ nessas telas). Se faltar, cai no portrait.
    - defeatImg:  tela de derrota desta personagem, em assets/img/.
+   - profile:    descrição longa, mostrada no modal de Perfil (menu).
    - difficulty: rótulo livre + multiplicadores que afetam a run.
    - stats:      status BASE (o nível/EXP retido soma por cima).
    - startingKit: itens com que ela começa cada run (ids de data/items.js).
@@ -24,7 +27,9 @@ export const CHARACTERS = {
     id: "juri_han",
     name: "Juri Han",
     portrait: "juri_han_retrato.jpeg",
+    combatImg: "juri_han_combate.jpeg",
     defeatImg: "juri_han_derrota.jpeg",
+    profile: "Escreva aqui a descrição longa da Juri Han: história, personalidade, estilo de luta, motivações. Este texto aparece no modal de Perfil.",
     difficulty: {
       label: "Normal",
       enemyHpMult: 1.0,
@@ -40,7 +45,9 @@ export const CHARACTERS = {
     id: "mina_ha",
     name: "Mina Ha",
     portrait: "mina_ha_retrato.jpeg",
+    combatImg: "mina_ha_combate.jpeg",
     defeatImg: "mina_ha_derrota.jpeg",
+    profile: "Escreva aqui a descrição longa da Mina Ha: história, personalidade, estilo de luta, motivações. Este texto aparece no modal de Perfil.",
     difficulty: {
       label: "Difícil",
       enemyHpMult: 1.0,

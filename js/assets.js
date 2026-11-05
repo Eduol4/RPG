@@ -8,12 +8,17 @@
    e eles aparecem sozinhos — sem precisar mexer no código.
    ============================================================ */
 
+import { openImageModal } from "./ui.js";
+
 export const ASSET_BASE = "assets/";
 
 /* Cria um <img>. Se o arquivo não carregar, troca por um placeholder
    visível com o nome, então você sempre sabe qual arquivo falta.
-   `width`/`height` são opcionais (ex.: "320px", "100%"). */
-export function image(path, { width = "100%", height = "auto", alt = "" } = {}) {
+   `width`/`height` são opcionais (ex.: "320px", "100%").
+   Toda imagem é clicável: abre em tela cheia (a não ser que o asset
+   esteja faltando — aí vira placeholder e não abre nada).
+   Passe `{ zoom: false }` para desativar o clique numa imagem específica. */
+export function image(path, { width = "100%", height = "auto", alt = "", zoom = true } = {}) {
   const wrap = document.createElement("div");
 
   const img = document.createElement("img");
@@ -27,6 +32,11 @@ export function image(path, { width = "100%", height = "auto", alt = "" } = {}) 
     const ph = placeholder("img/" + path, width, height === "auto" ? "160px" : height);
     wrap.replaceChildren(ph);
   };
+
+  if (zoom) {
+    img.style.cursor = "zoom-in";
+    img.onclick = () => openImageModal(img.src, img.alt);
+  }
 
   wrap.appendChild(img);
   return wrap;

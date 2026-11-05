@@ -34,7 +34,9 @@ export const CombatState = {
 
     const figHero = document.createElement("div");
     figHero.className = "combat-fig";
-    figHero.appendChild(image(run.character.portrait, { width: "100%", alt: run.character.name }));
+    // imagem-combate (cai no retrato se a personagem ainda não tiver uma)
+    const heroImg = run.character.combatImg || run.character.portrait;
+    figHero.appendChild(image(heroImg, { width: "100%", alt: run.character.name }));
     const capHero = document.createElement("div");
     capHero.className = "poi-sub";
     capHero.textContent = run.character.name;

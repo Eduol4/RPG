@@ -2,20 +2,20 @@
    navigation.js — ESTADO de run / exploração (modelo ABSTRATO).
 
    A sala é mostrada como uma lista de pontos de interesse (POIs).
-   Você clica no que quer abordar; não há avatar nem grade. Isso é
-   a "navegação espacial expressa por texto". Se um dia quisermos o
-   avatar numa grade, esta estrutura continua valendo por baixo.
+   Você clica no que quer abordar; não há avatar nem grade.
 
-   Fluxo:
-   - inimigo -> entra no estado de combate
+   LOG em três camadas:
+   - transient : o que acabou de acontecer. Cada linha aparece na
+     barra de log por ~3s e some sozinha.
+   - roomLog   : tudo que aconteceu na sala atual (reinicia por sala).
+   - runLog    : tudo que aconteceu na run inteira.
+   O botão "Log" (acima do inventário) abre um modal com roomLog e runLog.
+
+   Fluxo dos POIs:
+   - inimigo -> estado de combate
    - item    -> adiciona ao inventário
-   - npc     -> diálogo simples (com memória de reencontro)
-   - saída   -> próxima sala, ou vitória se for a última
-
-   LOG: as mensagens vivem em run.logLines (no estado da run), e NÃO
-   mais em elementos soltos do DOM. Isso é o que conserta o bug do
-   diálogo do NPC: antes, pushLog escrevia no DOM e o Game.render()
-   seguinte apagava tudo. Agora o log sobrevive ao re-render.
+   - npc     -> estado de interação com NPC (tela própria)
+   - saída   -> próxima sala (ou vitória)
    ============================================================ */
 
 import { getItem } from "./data/items.js";
@@ -23,35 +23,43 @@ import { getNpc } from "./data/rooms.js";
 import { Save } from "./state.js";
 import { renderInventory } from "./inventory.js";
 import { image } from "./assets.js";
+import { openModal } from "./ui.js";
 
 const ICON = { enemy: "⚔️", item: "🎁", npc: "💬", exit: "🚪" };
-const MAX_LOG = 8;   // quantas linhas de log manter visíveis por sala
+const TRANSIENT_MS = 3000;   // quanto tempo cada evento fica visível na barra
 
-/* Texto de abertura ao entrar numa sala. Sem "de N" — mostra só o
-   número da sala atual, como pedido. */
 function roomIntro(run) {
   return `Sala ${run.currentRoom + 1}. Você observa os arredores.`;
 }
 
-/* Acrescenta uma linha ao log da run (e corta as mais antigas). */
-export function pushLog(run, text) {
-  if (!run.logLines) run.logLines = [];
-  run.logLines.push(text);
-  while (run.logLines.length > MAX_LOG) run.logLines.shift();
+/* Garante que os três logs existam no objeto da run. */
+function ensureLogs(run) {
+  if (!run.runLog) run.runLog = [];
+  if (!run.roomLog) run.roomLog = [];
+  if (!run.transient) run.transient = [];
 }
 
-/* Uma sala está "limpa" quando não há inimigos pendentes.
-   Itens e NPCs NÃO bloqueiam mais o avanço — só inimigos. */
+/* Registra um evento: entra nos três logs. O diálogo de NPC NÃO passa
+   por aqui (ele fica só na tela do NPC); só as recompensas passam. */
+export function pushLog(run, text) {
+  ensureLogs(run);
+  run.runLog.push(text);
+  run.roomLog.push(text);
+  run.transient.push({ text, expiresAt: Date.now() + TRANSIENT_MS });
+}
+
 function enemiesCleared(room) {
   return !room.pois.some(p => p.type === "enemy" && !p.resolved);
 }
 
-/* Troca de sala, reiniciando o log com a abertura da nova sala.
-   O estado dos POIs (inimigos derrotados, itens pegos) fica gravado
-   em run.rooms, então voltar a uma sala preserva tudo que já foi feito. */
+/* Troca de sala: reinicia roomLog/transient e anuncia a nova sala.
+   O estado dos POIs fica gravado em run.rooms, então voltar preserva
+   inimigos derrotados, itens pegos, etc. */
 function enterRoom(run, index, Game) {
   run.currentRoom = index;
-  run.logLines = [roomIntro(run)];
+  run.roomLog = [];
+  run.transient = [];
+  pushLog(run, roomIntro(run));
   Game.go("run", { run });
 }
 
@@ -69,14 +77,16 @@ export const RunState = {
   render(root, ctx, Game) {
     const run = ctx.run;
     const room = run.rooms[run.currentRoom];
-    if (!run.logLines) run.logLines = [roomIntro(run)];
+
+    ensureLogs(run);
+    if (run.runLog.length === 0) pushLog(run, roomIntro(run));   // 1ª entrada da run
 
     const cleared = enemiesCleared(room);
 
     // ---------- HUD ----------
     root.appendChild(renderHud(run));
 
-    // ---------- Barra de log com setas de navegação nas bordas ----------
+    // ---------- Barra de log (transiente) com setas nas bordas ----------
     root.appendChild(renderLogBar(run, cleared, Game));
 
     // ---------- Fundo da sala (opcional) ----------
@@ -86,7 +96,7 @@ export const RunState = {
       root.appendChild(bg);
     }
 
-    // ---------- Colunas: POIs à esquerda, inventário à direita ----------
+    // ---------- Colunas: POIs à esquerda, (log + inventário) à direita ----------
     const columns = document.createElement("div");
     columns.className = "run-columns";
 
@@ -97,12 +107,12 @@ export const RunState = {
       if (poi.resolved) return;
 
       if (poi.type === "exit") {
-        // A saída só avança quando os inimigos foram derrotados.
         if (!cleared) {
           list.appendChild(makePoi(poi, "A saída (derrote os inimigos para avançar)", true));
           return;
         }
-        const btn = makePoi(poi, "Seguir para a próxima sala", false);
+        // Botão de avançar visualmente distinto dos demais POIs.
+        const btn = makePoi(poi, "Seguir para a próxima sala", false, "poi-advance");
         btn.onclick = () => advance(run, Game);
         list.appendChild(btn);
         return;
@@ -115,23 +125,52 @@ export const RunState = {
 
     columns.appendChild(list);
 
+    // Coluna direita: botão de Log em cima, retângulo do inventário embaixo.
+    const rightCol = document.createElement("div");
+    rightCol.className = "right-col";
+
+    const logBtn = document.createElement("button");
+    logBtn.className = "log-btn";
+    logBtn.textContent = "📜 Log";
+    logBtn.onclick = () => openLogModal(run);
+    rightCol.appendChild(logBtn);
+
     const inv = document.createElement("div");
     inv.className = "panel inv-panel";
     renderInventory(inv, run, {
       onLog: (msg) => pushLog(run, msg),
       onChange: () => Game.render(),
     });
-    columns.appendChild(inv);
+    rightCol.appendChild(inv);
 
+    columns.appendChild(rightCol);
     root.appendChild(columns);
 
-    // ---------- Rodapé: abandonar run ----------
+    // ---------- Rodapé: abandonar (assume derrota) vs voltar ao menu ----------
     const foot = document.createElement("div");
     foot.className = "btn-row";
-    const quit = document.createElement("button");
-    quit.textContent = "Abandonar run (voltar ao menu)";
-    quit.onclick = () => Game.go("menu", {});
-    foot.appendChild(quit);
+
+    const abandon = document.createElement("button");
+    abandon.className = "danger";
+    abandon.textContent = "Abandonar run (assumir derrota)";
+    abandon.onclick = () => {
+      if (confirm("Abandonar a run? Isso conta como derrota.")) {
+        Game.go("defeat", { run });
+      }
+    };
+
+    const toMenu = document.createElement("button");
+    toMenu.textContent = "Voltar ao menu (continuar depois)";
+    toMenu.onclick = () => {
+      // Salva a run em progresso (para o botão "Continuar" no menu),
+      // sem os campos transitórios de tempo.
+      const { character, transient, ...rest } = run;
+      Save.setActiveRun(character.id, { ...rest, characterId: character.id });
+      Game.go("menu", {});
+    };
+
+    foot.appendChild(abandon);
+    foot.appendChild(toMenu);
     root.appendChild(foot);
   },
 };
@@ -142,7 +181,6 @@ function renderLogBar(run, cleared, Game) {
   const bar = document.createElement("div");
   bar.className = "log";
 
-  // Seta esquerda: retroceder para a sala anterior (já explorada).
   const left = document.createElement("button");
   left.className = "nav-arrow";
   left.textContent = "←";
@@ -150,18 +188,22 @@ function renderLogBar(run, cleared, Game) {
   left.disabled = run.currentRoom <= 0;
   left.onclick = () => goBack(run, Game);
 
-  // Texto do log (todas as linhas acumuladas na sala atual).
   const text = document.createElement("div");
   text.className = "log-text";
-  run.logLines.forEach(linha => {
+
+  // Mostra só os eventos ainda "frescos" (dentro da janela de 3s) e agenda
+  // a remoção visual de cada um quando expira.
+  const now = Date.now();
+  run.transient = run.transient.filter(e => e.expiresAt > now);
+  run.transient.forEach(entry => {
     const p = document.createElement("p");
     p.className = "line";
-    p.textContent = linha;
+    p.textContent = entry.text;
     text.appendChild(p);
+    const remaining = Math.max(0, entry.expiresAt - now);
+    setTimeout(() => { if (p && p.remove) p.remove(); }, remaining);
   });
 
-  // Seta direita: avançar (alternativa ao botão de saída). Só quando
-  // os inimigos da sala atual foram derrotados.
   const right = document.createElement("button");
   right.className = "nav-arrow";
   right.textContent = "→";
@@ -175,6 +217,38 @@ function renderLogBar(run, cleared, Game) {
   return bar;
 }
 
+/* Modal com o log da sala e o log da run. */
+function openLogModal(run) {
+  ensureLogs(run);
+  const body = document.createElement("div");
+
+  const makeSection = (titulo, linhas) => {
+    const sec = document.createElement("div");
+    sec.className = "log-section";
+    const h = document.createElement("h4");
+    h.textContent = titulo;
+    sec.appendChild(h);
+    if (linhas.length === 0) {
+      const vazio = document.createElement("p");
+      vazio.className = "muted";
+      vazio.textContent = "(nada ainda)";
+      sec.appendChild(vazio);
+    } else {
+      linhas.forEach(l => {
+        const p = document.createElement("p");
+        p.className = "line";
+        p.textContent = l;
+        sec.appendChild(p);
+      });
+    }
+    return sec;
+  };
+
+  body.appendChild(makeSection("Log da sala", run.roomLog));
+  body.appendChild(makeSection("Log da run", run.runLog));
+  openModal({ title: "Log", bodyNode: body });
+}
+
 function labelFor(poi) {
   switch (poi.type) {
     case "enemy": return "Um inimigo à espreita";
@@ -185,9 +259,9 @@ function labelFor(poi) {
   }
 }
 
-function makePoi(poi, label, disabled) {
+function makePoi(poi, label, disabled, extraClass = "") {
   const btn = document.createElement("button");
-  btn.className = "poi " + poi.type;
+  btn.className = "poi " + poi.type + (extraClass ? " " + extraClass : "");
   btn.disabled = disabled;
   btn.innerHTML = `
     <span class="poi-icon">${ICON[poi.type] ?? "?"}</span>
@@ -209,21 +283,10 @@ function handlePoi(poi, run, Game) {
       return;
     }
 
-    case "npc": {
-      const npc = getNpc(poi.ref);
-      const charId = run.character.id;
-      // MEMÓRIA: primeira vez vs. reencontro, lido do save permanente.
-      const jaConheceu = Save.hasFlag(charId, npc.memoryFlag);
-      pushLog(run, jaConheceu ? npc.reunion : npc.firstMeet);
-      if (!jaConheceu) Save.setFlag(charId, npc.memoryFlag, true);
-      if (npc.reward?.gold) {
-        run.runGold += npc.reward.gold;
-        pushLog(run, `(+${npc.reward.gold} ouro)`);
-      }
-      poi.resolved = true;
-      Game.render();
+    case "npc":
+      // Interação do NPC agora tem tela própria; o diálogo não vai ao log.
+      Game.go("npc", { npc: { run, npcRef: poi.ref, poiId: poi.id } });
       return;
-    }
   }
 }
 

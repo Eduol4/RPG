@@ -203,3 +203,84 @@ button.danger  { border-color: var(--danger); color: var(--danger); }
   align-items: center;
   gap: 6px;
 }
+
+/* ============================================================
+   Ajustes da 3ª iteração
+   ============================================================ */
+
+/* ---------- Botão de avançar de sala (distinto dos POIs comuns) ---------- */
+.poi.poi-advance {
+  background: linear-gradient(90deg, rgba(90,184,90,0.20), rgba(90,184,90,0.05));
+  border-color: var(--ok);
+}
+.poi.poi-advance:hover { background: linear-gradient(90deg, rgba(90,184,90,0.30), rgba(90,184,90,0.08)); }
+.poi.poi-advance .poi-icon { border-color: var(--ok); background: rgba(90,184,90,0.22); }
+.poi.poi-advance .poi-label { color: var(--ok); font-weight: 600; }
+
+/* ---------- Coluna direita: botão de Log + inventário ---------- */
+.right-col {
+  width: 220px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.right-col .inv-panel { width: 100%; }
+.log-btn { width: 100%; text-align: center; }
+@media (max-width: 640px) {
+  .right-col { width: 100%; }
+}
+
+/* ---------- Ações do card de personagem (Perfil no extremo oposto) ---------- */
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* ---------- Diálogo na tela de NPC ---------- */
+.npc-dialogue {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 4px auto 14px;
+  max-width: 520px;
+}
+
+/* ---------- Modal genérico ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 560px; width: 100%;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.modal-title { margin: 0; }
+.modal-close { flex: none; padding: 4px 11px; font-size: 16px; }
+.modal-body { padding: 18px; overflow-y: auto; }
+
+.log-section { margin-bottom: 16px; }
+.log-section:last-child { margin-bottom: 0; }
+.log-section h4 { margin: 0 0 8px; color: var(--accent); }
+
+/* ---------- Imagem em tela cheia ---------- */
+.image-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.image-full { max-width: 95vw; max-height: 90vh; border-radius: 8px; }
+.image-close { position: fixed; top: 16px; right: 16px; font-size: 20px; padding: 6px 13px; }

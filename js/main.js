@@ -5,6 +5,7 @@
    - menu      : seleção de personagem (Modo 2 — jogar COMO a personagem)
    - run       : exploração/navegação (navigation.js)
    - combat    : combate placeholder (combat.js)
+   - npc       : interação com NPC em tela própria (npc.js)
    - defeat    : derrota -> aplica retenção -> volta ao menu
    - victory   : vitória -> aplica retenção -> volta ao menu
 
@@ -19,8 +20,10 @@ import { CHARACTERS, getCharacter } from "./data/characters.js";
 import { generateRun } from "./roguelike.js";
 import { RunState } from "./navigation.js";
 import { CombatState } from "./combat.js";
+import { NpcState } from "./npc.js";
 import { applyRunResult } from "./meta.js";
 import { image } from "./assets.js";
+import { openModal } from "./ui.js";
 
 /* ---------------- MENU: seleção de personagem ---------------- */
 const MenuState = {
@@ -60,15 +63,32 @@ const MenuState = {
       row.appendChild(info);
       card.appendChild(row);
 
+      // Ações: à esquerda Jogar / Continuar / Resetar; à direita Perfil.
       const actions = document.createElement("div");
-      actions.className = "btn-row";
-      actions.style.marginTop = "12px";
+      actions.className = "card-actions";
+
+      const leftBtns = document.createElement("div");
+      leftBtns.className = "btn-row";
 
       const play = document.createElement("button");
       play.className = "primary";
       play.textContent = "▶ Jogar";
       play.onclick = () => startRun(char.id);
-      actions.appendChild(play);
+      leftBtns.appendChild(play);
+
+      // "Continuar" só aparece quando há uma run em progresso para esta
+      // personagem (entre Jogar e Resetar).
+      const active = Save.getActiveRun(char.id);
+      if (active) {
+        const cont = document.createElement("button");
+        cont.className = "primary";
+        cont.textContent = "⏯ Continuar";
+        cont.onclick = () => {
+          const run = { ...active, character: getCharacter(active.characterId), transient: [] };
+          Game.go("run", { run });
+        };
+        leftBtns.appendChild(cont);
+      }
 
       const reset = document.createElement("button");
       reset.className = "danger";
@@ -79,8 +99,17 @@ const MenuState = {
           Game.render();
         }
       };
-      actions.appendChild(reset);
+      leftBtns.appendChild(reset);
 
+      const rightBtns = document.createElement("div");
+      rightBtns.className = "btn-row";
+      const perfil = document.createElement("button");
+      perfil.textContent = "Perfil";
+      perfil.onclick = () => openProfile(char);
+      rightBtns.appendChild(perfil);
+
+      actions.appendChild(leftBtns);
+      actions.appendChild(rightBtns);
       card.appendChild(actions);
       wrap.appendChild(card);
     });
@@ -89,11 +118,27 @@ const MenuState = {
   },
 };
 
+function openProfile(char) {
+  const body = document.createElement("div");
+
+  const img = image(char.portrait, { width: "160px", alt: char.name });
+  img.style.margin = "0 auto 16px";
+  body.appendChild(img);
+
+  const desc = document.createElement("p");
+  desc.style.lineHeight = "1.6";
+  desc.textContent = char.profile || "(sem descrição ainda — preencha o campo 'profile' em data/characters.js)";
+  body.appendChild(desc);
+
+  openModal({ title: char.name, bodyNode: body });
+}
+
 function startRun(charId) {
   const char = getCharacter(charId);
   const meta = Save.forCharacter(charId);
+  Save.clearActiveRun(charId);   // começar uma nova run descarta a pausada
   const run = generateRun(char, meta, { length: 3 });
-  Game.go("run", { run, pendingLog: null });
+  Game.go("run", { run });
 }
 
 /* ---------------- DERROTA ---------------- */
@@ -101,46 +146,35 @@ const DefeatState = {
   render(root, ctx) {
     const run = ctx.run;
     const result = applyRunResult(run, "defeat");
+    Save.clearActiveRun(run.character.id);
 
     const box = document.createElement("div");
     box.className = "defeat";
     box.innerHTML = `<h1>Derrotada</h1>`;
 
-    // Tela de derrota específica da personagem (placeholder se faltar).
-    // Maior e centralizada na tela.
+    // Tela de derrota específica da personagem, maior e centralizada.
     const defeatImg = image(run.character.defeatImg, { width: "100%", alt: "derrota" });
     defeatImg.style.maxWidth = "420px";
     defeatImg.style.margin = "16px auto 0";
     box.appendChild(defeatImg);
 
-    // Mensagem de derrota individual por personagem (campo defeatMessage em
-    // data/characters.js). Se a personagem ainda não tiver uma, usa um texto
-    // genérico — assim nada quebra enquanto você escreve as mensagens.
     const defeatMsg = run.character.defeatMessage
       || `${run.character.name} foi derrotada — mas não morreu. Ela recomeça.`;
+
+    const ouroTexto = result.goldPerdido > 0
+      ? `Todo o ouro retido foi perdido (−${result.goldPerdido}).`
+      : `Nenhum ouro retido a perder.`;
 
     const summary = document.createElement("div");
     summary.className = "panel";
     summary.style.marginTop = "20px";
     summary.innerHTML = `
       <p>${defeatMsg}</p>
-      <p class="muted">Retido desta run: +${result.gainedExp} EXP, +${result.gainedGold} ouro.</p>
-      <p class="poi-sub">Totais permanentes — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
+      <p class="muted">EXP retido desta run: +${result.gainedExp}. ${ouroTexto}</p>
+      <p class="poi-sub">Permanente — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
     box.appendChild(summary);
 
-    const row = document.createElement("div");
-    row.className = "btn-row";
-    row.style.justifyContent = "center";
-    const again = document.createElement("button");
-    again.className = "primary";
-    again.textContent = "Nova run";
-    again.onclick = () => startRun(run.character.id);
-    const menu = document.createElement("button");
-    menu.textContent = "Voltar ao menu";
-    menu.onclick = () => Game.go("menu", {});
-    row.appendChild(again); row.appendChild(menu);
-    box.appendChild(row);
-
+    box.appendChild(endButtons(run));
     root.appendChild(box);
   },
 };
@@ -150,6 +184,7 @@ const VictoryState = {
   render(root, ctx) {
     const run = ctx.run;
     const result = applyRunResult(run, "victory");
+    Save.clearActiveRun(run.character.id);
 
     const box = document.createElement("div");
     box.className = "defeat";
@@ -159,32 +194,41 @@ const VictoryState = {
     summary.className = "panel";
     summary.innerHTML = `
       <p>${run.character.name} completou a run.</p>
-      <p class="muted">Ganho retido: +${result.gainedExp} EXP, +${result.gainedGold} ouro.</p>
-      <p class="poi-sub">Totais permanentes — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
+      <p class="muted">Por enquanto, vencer reinicia o EXP e o ouro retidos.</p>
+      <p class="poi-sub">Permanente — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
     box.appendChild(summary);
 
-    const row = document.createElement("div");
-    row.className = "btn-row";
-    row.style.justifyContent = "center";
-    const again = document.createElement("button");
-    again.className = "primary";
-    again.textContent = "Nova run";
-    again.onclick = () => startRun(run.character.id);
-    const menu = document.createElement("button");
-    menu.textContent = "Voltar ao menu";
-    menu.onclick = () => Game.go("menu", {});
-    row.appendChild(again); row.appendChild(menu);
-    box.appendChild(row);
-
+    box.appendChild(endButtons(run));
     root.appendChild(box);
   },
 };
+
+/* Botões comuns às telas de fim de run. */
+function endButtons(run) {
+  const row = document.createElement("div");
+  row.className = "btn-row";
+  row.style.justifyContent = "center";
+
+  const again = document.createElement("button");
+  again.className = "primary";
+  again.textContent = "Nova run";
+  again.onclick = () => startRun(run.character.id);
+
+  const menu = document.createElement("button");
+  menu.textContent = "Voltar ao menu";
+  menu.onclick = () => Game.go("menu", {});
+
+  row.appendChild(again);
+  row.appendChild(menu);
+  return row;
+}
 
 /* ---------------- BOOT ---------------- */
 Game.init(document.getElementById("screen"))
   .register("menu", MenuState)
   .register("run", RunState)
   .register("combat", CombatState)
+  .register("npc", NpcState)
   .register("defeat", DefeatState)
   .register("victory", VictoryState)
   .go("menu");
