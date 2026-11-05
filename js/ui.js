@@ -1,18 +1,20 @@
 /* ============================================================
    ui.js — peças de interface reutilizáveis: modais.
 
-   Sem dependências e sem conteúdo de jogo: só "janelas" que abrem
-   por cima de tudo. Usado pelo log, pelo perfil da personagem e
-   pela visualização de imagem em tela cheia.
+   Implementado com o elemento NATIVO <dialog> + showModal(). Isso
+   coloca o modal na "top layer" do navegador, que fica ACIMA de tudo
+   e é imune a: transform/filter em ancestrais (extensões como Dark
+   Reader quebram position:fixed), guerras de z-index e clipping de
+   overflow. É o jeito mais robusto de garantir que o modal apareça.
+
+   Esc fecha (comportamento nativo do <dialog>); clicar no fundo
+   (backdrop) também fecha.
    ============================================================ */
 
-/* Abre um modal genérico por cima da tela.
-   - title: texto do cabeçalho (opcional).
-   - bodyNode: um elemento DOM com o conteúdo.
-   Fecha no X, clicando fora, ou com Esc. */
+/* Abre um modal genérico. title = cabeçalho; bodyNode = conteúdo DOM. */
 export function openModal({ title = "", bodyNode }) {
-  const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
+  const dialog = document.createElement("dialog");
+  dialog.className = "modal-dialog";
 
   const modal = document.createElement("div");
   modal.className = "modal";
@@ -35,27 +37,23 @@ export function openModal({ title = "", bodyNode }) {
 
   modal.appendChild(header);
   modal.appendChild(body);
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+  dialog.appendChild(modal);
+  document.body.appendChild(dialog);
 
-  function dismiss() {
-    overlay.remove();
-    document.removeEventListener("keydown", onKey);
-  }
-  function onKey(e) { if (e.key === "Escape") dismiss(); }
+  close.onclick = () => dialog.close();
+  // Clique no backdrop (fora do conteúdo) fecha: o alvo é o próprio <dialog>.
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  // Ao fechar (X, Esc, backdrop), remove do DOM.
+  dialog.addEventListener("close", () => dialog.remove());
 
-  close.onclick = dismiss;
-  overlay.onclick = (e) => { if (e.target === overlay) dismiss(); };
-  document.addEventListener("keydown", onKey);
-
-  return { overlay, close: dismiss };
+  dialog.showModal();
+  return { dialog, close: () => dialog.close() };
 }
 
-/* Abre uma imagem em tela cheia, com X para fechar. `src` é a URL
-   já resolvida (a função image() de assets.js passa img.src). */
+/* Abre uma imagem em tela cheia, com X para fechar. */
 export function openImageModal(src, alt = "") {
-  const overlay = document.createElement("div");
-  overlay.className = "image-overlay";
+  const dialog = document.createElement("dialog");
+  dialog.className = "image-dialog";
 
   const close = document.createElement("button");
   close.className = "image-close";
@@ -67,17 +65,13 @@ export function openImageModal(src, alt = "") {
   img.src = src;
   img.alt = alt;
 
-  overlay.appendChild(close);
-  overlay.appendChild(img);
-  document.body.appendChild(overlay);
+  dialog.appendChild(close);
+  dialog.appendChild(img);
+  document.body.appendChild(dialog);
 
-  function dismiss() {
-    overlay.remove();
-    document.removeEventListener("keydown", onKey);
-  }
-  function onKey(e) { if (e.key === "Escape") dismiss(); }
+  close.onclick = () => dialog.close();
+  dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener("close", () => dialog.remove());
 
-  close.onclick = dismiss;
-  overlay.onclick = (e) => { if (e.target === overlay) dismiss(); };
-  document.addEventListener("keydown", onKey);
+  dialog.showModal();
 }
