@@ -30,7 +30,7 @@ const MenuState = {
     const title = document.createElement("div");
     title.className = "panel center";
     title.innerHTML = `<h1>RPG Text</h1>
-      <p class="muted">Modo 2 — Escolha uma personagem para jogar</p>`;
+      <p class="muted">Escolha uma personagem para jogar</p>`;
     wrap.appendChild(title);
 
     Object.values(CHARACTERS).forEach(char => {

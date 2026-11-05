@@ -23,7 +23,7 @@ export const CHARACTERS = {
     portrait: "juri_han_retrato.jpeg",
     defeatImg: "juri_han_derrota.jpeg",
     difficulty: {
-      label: "Equilibrada",
+      label: "Normal",
       enemyHpMult: 1.0,
       enemyDmgMult: 1.0,
     },
@@ -35,7 +35,7 @@ export const CHARACTERS = {
   mina_ha: {
     id: "mina_ha",
     name: "Mina Ha",
-    portrait: "mina_ha_retrato.jpg",
+    portrait: "mina_ha_retrato.jpeg",
     defeatImg: "mina_ha_derrota.jpeg",
     difficulty: {
       label: "Difícil",
