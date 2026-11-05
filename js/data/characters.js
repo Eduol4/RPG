@@ -13,6 +13,9 @@
    - stats:      status BASE (o nível/EXP retido soma por cima).
    - startingKit: itens com que ela começa cada run (ids de data/items.js).
    - intro:      linha curta mostrada ao escolher a personagem.
+   - defeatMessage: frase mostrada na tela de derrota desta personagem.
+                 (No futuro dá para ter mensagens por situação; por ora,
+                  uma por personagem. Se faltar, usa um texto genérico.)
    ============================================================ */
 
 export const CHARACTERS = {
@@ -30,6 +33,7 @@ export const CHARACTERS = {
     stats: { maxHp: 15, atk: 5, def: 0 },
     startingKit: [],
     intro: "Forte e ágil, equilibrada em todos os atributos.",
+    defeatMessage: "Juri Han foi derrotada — mas não morreu. Ela recomeça.",
   },
 
   mina_ha: {
@@ -45,6 +49,7 @@ export const CHARACTERS = {
     stats: { maxHp: 10, atk: 3, def: 0 },
     startingKit: ["pocao_pequena"],
     intro: "Frágil, mas tem outras vantagens em comparação.",
+    defeatMessage: "Mina Ha foi derrotada — mas não morreu. Ela recomeça.",
   },
 
 };

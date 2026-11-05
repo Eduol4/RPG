@@ -42,7 +42,7 @@ const MenuState = {
       row.className = "poi";
       row.style.alignItems = "flex-start";
 
-      const portrait = image(char.portrait, { width: "90px", height: "90px", alt: char.name });
+      const portrait = image(char.portrait, { width: "120px", height: "120px", alt: char.name });
       portrait.style.flex = "none";
       row.appendChild(portrait);
 
@@ -107,13 +107,23 @@ const DefeatState = {
     box.innerHTML = `<h1>Derrotada</h1>`;
 
     // Tela de derrota específica da personagem (placeholder se faltar).
-    box.appendChild(image(run.character.defeatImg, { width: "260px", alt: "derrota" }));
+    // Maior e centralizada na tela.
+    const defeatImg = image(run.character.defeatImg, { width: "100%", alt: "derrota" });
+    defeatImg.style.maxWidth = "420px";
+    defeatImg.style.margin = "16px auto 0";
+    box.appendChild(defeatImg);
+
+    // Mensagem de derrota individual por personagem (campo defeatMessage em
+    // data/characters.js). Se a personagem ainda não tiver uma, usa um texto
+    // genérico — assim nada quebra enquanto você escreve as mensagens.
+    const defeatMsg = run.character.defeatMessage
+      || `${run.character.name} foi derrotada — mas não morreu. Ela recomeça.`;
 
     const summary = document.createElement("div");
     summary.className = "panel";
     summary.style.marginTop = "20px";
     summary.innerHTML = `
-      <p>${run.character.name} foi derrotada — mas não morreu. Ela recomeça.</p>
+      <p>${defeatMsg}</p>
       <p class="muted">Retido desta run: +${result.gainedExp} EXP, +${result.gainedGold} ouro.</p>
       <p class="poi-sub">Totais permanentes — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
     box.appendChild(summary);

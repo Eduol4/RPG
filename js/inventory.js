@@ -24,7 +24,7 @@ export function renderInventory(container, runState, { onLog, onChange }) {
   }
 
   const col = document.createElement("div");
-  col.className = "btn-row";
+  col.className = "btn-col";   // vertical, para caber no retângulo lateral
   runState.inventory.forEach((itemId, idx) => {
     const item = getItem(itemId);
     const btn = document.createElement("button");

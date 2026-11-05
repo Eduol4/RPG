@@ -11,6 +11,7 @@
 
 import { getEnemy } from "./data/enemies.js";
 import { image } from "./assets.js";
+import { pushLog } from "./navigation.js";
 
 export const CombatState = {
   render(root, ctx, Game) {
@@ -26,7 +27,30 @@ export const CombatState = {
     panel.className = "panel center";
     panel.innerHTML = `<h2>⚔️ Combate</h2>`;
 
-    panel.appendChild(image(enemy.sprite, { width: "180px", alt: enemy.name }));
+    // Retrato (esquerda) + inimigo (direita), lado a lado e centralizados,
+    // cada um ocupando metade da área central.
+    const figures = document.createElement("div");
+    figures.className = "combat-figures";
+
+    const figHero = document.createElement("div");
+    figHero.className = "combat-fig";
+    figHero.appendChild(image(run.character.portrait, { width: "100%", alt: run.character.name }));
+    const capHero = document.createElement("div");
+    capHero.className = "poi-sub";
+    capHero.textContent = run.character.name;
+    figHero.appendChild(capHero);
+
+    const figEnemy = document.createElement("div");
+    figEnemy.className = "combat-fig";
+    figEnemy.appendChild(image(enemy.sprite, { width: "100%", alt: enemy.name }));
+    const capEnemy = document.createElement("div");
+    capEnemy.className = "poi-sub";
+    capEnemy.textContent = enemy.name;
+    figEnemy.appendChild(capEnemy);
+
+    figures.appendChild(figHero);
+    figures.appendChild(figEnemy);
+    panel.appendChild(figures);
 
     const info = document.createElement("p");
     info.innerHTML = `Você encontrou <b>${enemy.name}</b> (HP ${enemyHp}, ATK ${enemyDmg}).`;
@@ -48,7 +72,7 @@ export const CombatState = {
     win.onclick = () => {
       run.runGold += enemy.goldReward;
       run.runExp  += enemy.expReward;
-      ctx.pendingLog = `Derrotou ${enemy.name}. +${enemy.goldReward} ouro, +${enemy.expReward} EXP.`;
+      pushLog(run, `Derrotou ${enemy.name}. +${enemy.goldReward} ouro, +${enemy.expReward} EXP.`);
       markResolved(run, poiId);
       Game.go("run", { run });
     };
@@ -64,7 +88,7 @@ export const CombatState = {
         Game.go("defeat", { run });
         return;
       }
-      ctx.pendingLog = `${enemy.name} acertou você. -${dano} HP. (combate continua no sistema real)`;
+      pushLog(run, `${enemy.name} acertou você. -${dano} HP. (combate continua no sistema real)`);
       markResolved(run, poiId);
       Game.go("run", { run });
     };

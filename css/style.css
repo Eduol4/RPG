@@ -151,3 +151,55 @@ button.danger  { border-color: var(--danger); color: var(--danger); }
 /* ---------- Tela de derrota ---------- */
 .defeat { text-align: center; padding-top: 40px; }
 .defeat h1 { color: var(--danger); font-size: 40px; margin-bottom: 8px; }
+
+/* ============================================================
+   Ajustes da 2ª iteração
+   ============================================================ */
+
+/* ---------- Barra de log com setas de navegação nas bordas ---------- */
+/* Transforma o retângulo do log em: [← seta] [texto] [→ seta]. */
+.log {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.log-text { flex: 1; }
+.nav-arrow {
+  flex: none;
+  font-size: 20px;
+  line-height: 1;
+  padding: 8px 14px;
+}
+
+/* ---------- Colunas da run: POIs à esquerda, inventário à direita ---------- */
+.run-columns {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.poi-panel { flex: 1; min-width: 0; margin-bottom: 0; }
+/* O inventário vira um retângulo vertical fixo no lado direito. */
+.inv-panel { width: 220px; flex: none; margin-bottom: 0; }
+/* Em telas estreitas, empilha de novo (inventário volta para baixo). */
+@media (max-width: 640px) {
+  .run-columns { flex-direction: column; }
+  .inv-panel { width: 100%; }
+}
+
+/* ---------- Combate: retrato + inimigo, metade cada, centralizados ---------- */
+.combat-figures {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  max-width: 480px;
+  margin: 0 auto 12px;
+}
+.combat-fig {
+  flex: 1 1 0;
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
