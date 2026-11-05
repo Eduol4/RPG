@@ -39,13 +39,25 @@ function ensureLogs(run) {
   if (!run.transient) run.transient = [];
 }
 
-/* Registra um evento: entra nos três logs. O diálogo de NPC NÃO passa
-   por aqui (ele fica só na tela do NPC); só as recompensas passam. */
+/* Registra um EVENTO transitório: aparece na barra por ~3s e some.
+   Também entra no histórico (roomLog/runLog), visível no modal de Log.
+   O diálogo de NPC NÃO passa por aqui — só as recompensas passam. */
 export function pushLog(run, text) {
   ensureLogs(run);
   run.runLog.push(text);
   run.roomLog.push(text);
   run.transient.push({ text, expiresAt: Date.now() + TRANSIENT_MS });
+}
+
+/* Define a linha PERMANENTE da sala (ex.: "Sala 1. Você observa os
+   arredores."). Diferente dos eventos, ela não some da barra. Também
+   entra no histórico, mas nunca na lista de transitórios. */
+function announceRoom(run) {
+  ensureLogs(run);
+  const text = roomIntro(run);
+  run.roomHeader = text;
+  run.roomLog.push(text);
+  run.runLog.push(text);
 }
 
 function enemiesCleared(room) {
@@ -59,7 +71,7 @@ function enterRoom(run, index, Game) {
   run.currentRoom = index;
   run.roomLog = [];
   run.transient = [];
-  pushLog(run, roomIntro(run));
+  announceRoom(run);
   Game.go("run", { run });
 }
 
@@ -79,7 +91,7 @@ export const RunState = {
     const room = run.rooms[run.currentRoom];
 
     ensureLogs(run);
-    if (run.runLog.length === 0) pushLog(run, roomIntro(run));   // 1ª entrada da run
+    if (!run.roomHeader) announceRoom(run);   // 1ª entrada da run (ou run retomada antiga)
 
     const cleared = enemiesCleared(room);
 
@@ -191,13 +203,21 @@ function renderLogBar(run, cleared, Game) {
   const text = document.createElement("div");
   text.className = "log-text";
 
-  // Mostra só os eventos ainda "frescos" (dentro da janela de 3s) e agenda
-  // a remoção visual de cada um quando expira.
+  // Linha PERMANENTE da sala (não some): "Sala N. Você observa os arredores."
+  if (run.roomHeader) {
+    const head = document.createElement("p");
+    head.className = "line";
+    head.textContent = run.roomHeader;
+    text.appendChild(head);
+  }
+
+  // EVENTOS transitórios: mostra só os ainda "frescos" (dentro da janela de
+  // 3s) e agenda a remoção visual de cada um quando expira.
   const now = Date.now();
   run.transient = run.transient.filter(e => e.expiresAt > now);
   run.transient.forEach(entry => {
     const p = document.createElement("p");
-    p.className = "line";
+    p.className = "line log-event";
     p.textContent = entry.text;
     text.appendChild(p);
     const remaining = Math.max(0, entry.expiresAt - now);

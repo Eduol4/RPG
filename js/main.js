@@ -55,11 +55,10 @@ const MenuState = {
         <h3 style="margin:0 0 4px">${char.name}
           <span class="muted" style="font-size:13px">— ${char.difficulty.label}</span></h3>
         <p style="margin:0 0 8px" class="muted">${char.intro}</p>
-        <p style="margin:0" class="poi-sub">
-          HP ${char.stats.maxHp} · ATK ${char.stats.atk} · DEF ${char.stats.def}
-          &nbsp;|&nbsp; Runs: ${meta.runsPlayed}
-          · EXP retido: ${meta.retainedExp} · Ouro retido: ${meta.retainedGold}
-        </p>`;
+        <p style="margin:0 0 3px" class="poi-sub">ATK ${char.stats.atk} · HP ${char.stats.maxHp} · DEF ${char.stats.def}</p>
+        <p style="margin:0 0 3px" class="poi-sub">Número de tentativas: ${meta.runsPlayed}</p>
+        <p style="margin:0 0 3px" class="poi-sub">EXP retido: ${meta.retainedExp}</p>
+        <p style="margin:0" class="poi-sub">Ouro retido: ${meta.retainedGold}</p>`;
       row.appendChild(info);
       card.appendChild(row);
 
@@ -171,7 +170,7 @@ const DefeatState = {
     summary.innerHTML = `
       <p>${defeatMsg}</p>
       <p class="muted">EXP retido desta run: +${result.gainedExp}. ${ouroTexto}</p>
-      <p class="poi-sub">Permanente — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
+      <p class="poi-sub">Permanente — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Tentativas: ${result.runsPlayed}</p>`;
     box.appendChild(summary);
 
     box.appendChild(endButtons(run));
@@ -195,7 +194,7 @@ const VictoryState = {
     summary.innerHTML = `
       <p>${run.character.name} completou a run.</p>
       <p class="muted">Por enquanto, vencer reinicia o EXP e o ouro retidos.</p>
-      <p class="poi-sub">Permanente — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Runs: ${result.runsPlayed}</p>`;
+      <p class="poi-sub">Permanente — EXP: ${result.totalExp} · Ouro: ${result.totalGold} · Tentativas: ${result.runsPlayed}</p>`;
     box.appendChild(summary);
 
     box.appendChild(endButtons(run));

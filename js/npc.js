@@ -33,8 +33,8 @@ export const NpcState = {
 
     const figHero = document.createElement("div");
     figHero.className = "combat-fig";
-    const heroImg = run.character.combatImg || run.character.portrait;
-    figHero.appendChild(image(heroImg, { width: "100%", alt: run.character.name }));
+    // Na tela de NPC usamos o RETRATO (diferente do combate, que usa combatImg).
+    figHero.appendChild(image(run.character.portrait, { width: "100%", alt: run.character.name }));
     const capHero = document.createElement("div");
     capHero.className = "poi-sub";
     capHero.textContent = run.character.name;
