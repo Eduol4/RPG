@@ -23,16 +23,28 @@ export function renderInventory(container, runState, { onLog, onChange }) {
     return;
   }
 
+  // Agrupa itens repetidos: em vez de listar um embaixo do outro, mostra
+  // "Nome (xN)". A ordem segue a primeira aparição de cada item.
+  const counts = {};
+  const ordem = [];
+  runState.inventory.forEach(id => {
+    if (counts[id] === undefined) { counts[id] = 0; ordem.push(id); }
+    counts[id]++;
+  });
+
   const col = document.createElement("div");
   col.className = "btn-col";   // vertical, para caber no retângulo lateral
-  runState.inventory.forEach((itemId, idx) => {
+  ordem.forEach(itemId => {
     const item = getItem(itemId);
+    const qtd = counts[itemId];
     const btn = document.createElement("button");
-    btn.textContent = `${item.icon} ${item.name}`;
+    btn.textContent = `${item.icon} ${item.name}` + (qtd > 1 ? ` (x${qtd})` : "");
     btn.title = item.desc;
     btn.onclick = () => {
       const msg = item.use(runState);
-      runState.inventory.splice(idx, 1);   // consome
+      // Consome UMA unidade (remove a primeira ocorrência deste item).
+      const idx = runState.inventory.indexOf(itemId);
+      if (idx >= 0) runState.inventory.splice(idx, 1);
       onLog?.(msg);
       onChange?.();
     };

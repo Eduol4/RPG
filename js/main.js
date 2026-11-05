@@ -23,7 +23,7 @@ import { CombatState } from "./combat.js";
 import { NpcState } from "./npc.js";
 import { applyRunResult } from "./meta.js";
 import { image } from "./assets.js";
-import { openModal } from "./ui.js";
+import { openTabbedModal } from "./ui.js";
 
 /* ---------------- MENU: seleção de personagem ---------------- */
 const MenuState = {
@@ -69,15 +69,19 @@ const MenuState = {
       const leftBtns = document.createElement("div");
       leftBtns.className = "btn-row";
 
+      // Se há uma run em progresso, "Jogar" fica desabilitado (use Continuar).
+      const active = Save.getActiveRun(char.id);
+
       const play = document.createElement("button");
       play.className = "primary";
       play.textContent = "▶ Jogar";
+      play.disabled = !!active;
+      if (active) play.title = "Há uma run em andamento — use Continuar (ou abandone a run primeiro).";
       play.onclick = () => startRun(char.id);
       leftBtns.appendChild(play);
 
       // "Continuar" só aparece quando há uma run em progresso para esta
       // personagem (entre Jogar e Resetar).
-      const active = Save.getActiveRun(char.id);
       if (active) {
         const cont = document.createElement("button");
         cont.className = "primary";
@@ -102,10 +106,10 @@ const MenuState = {
 
       const rightBtns = document.createElement("div");
       rightBtns.className = "btn-row";
-      const perfil = document.createElement("button");
-      perfil.textContent = "Perfil";
-      perfil.onclick = () => openProfile(char);
-      rightBtns.appendChild(perfil);
+      const infoBtn = document.createElement("button");
+      infoBtn.textContent = "Info";
+      infoBtn.onclick = () => openInfo(char);
+      rightBtns.appendChild(infoBtn);
 
       actions.appendChild(leftBtns);
       actions.appendChild(rightBtns);
@@ -117,19 +121,52 @@ const MenuState = {
   },
 };
 
-function openProfile(char) {
-  const body = document.createElement("div");
+/* Modal "Info": retrato centralizado + abas Perfil (default) e Atributos. */
+function openInfo(char) {
+  const portrait = image(char.portrait, { width: "180px", alt: char.name });
+  portrait.style.display = "flex";
+  portrait.style.justifyContent = "center";
+  portrait.style.marginBottom = "8px";
 
-  const img = image(char.portrait, { width: "160px", alt: char.name });
-  img.style.margin = "0 auto 16px";
-  body.appendChild(img);
+  const perfilTab = () => {
+    const p = document.createElement("p");
+    p.style.lineHeight = "1.6";
+    p.textContent = char.profile || "(sem descrição ainda — preencha 'profile' em data/characters.js)";
+    return p;
+  };
 
-  const desc = document.createElement("p");
-  desc.style.lineHeight = "1.6";
-  desc.textContent = char.profile || "(sem descrição ainda — preencha o campo 'profile' em data/characters.js)";
-  body.appendChild(desc);
+  const atributosTab = () => {
+    const wrap = document.createElement("div");
 
-  openModal({ title: char.name, bodyNode: body });
+    // Por enquanto "atual" = "base" (os atributos ainda não são upáveis;
+    // quando forem, mostramos base e atual lado a lado aqui).
+    const linha = (label, base, atual = base) => {
+      const row = document.createElement("div");
+      row.className = "attr-row";
+      row.innerHTML = `<span class="attr-name">${label}</span>
+        <span class="attr-val">base ${base} · atual ${atual}</span>`;
+      return row;
+    };
+    wrap.appendChild(linha("ATK", char.stats.atk));
+    wrap.appendChild(linha("HP",  char.stats.maxHp));
+    wrap.appendChild(linha("DEF", char.stats.def));
+
+    const extra = document.createElement("p");
+    extra.className = "muted";
+    extra.style.marginTop = "14px";
+    extra.textContent = "Benefícios e malefícios passivos: (a serem adicionados)";
+    wrap.appendChild(extra);
+    return wrap;
+  };
+
+  openTabbedModal({
+    title: char.name,
+    topNode: portrait,
+    tabs: [
+      { label: "Perfil", render: perfilTab },
+      { label: "Atributos", render: atributosTab },
+    ],
+  });
 }
 
 function startRun(charId) {
@@ -144,21 +181,30 @@ function startRun(charId) {
 const DefeatState = {
   render(root, ctx) {
     const run = ctx.run;
+    const rendicao = ctx.reason === "surrender";   // abandonou a run?
     const result = applyRunResult(run, "defeat");
     Save.clearActiveRun(run.character.id);
 
     const box = document.createElement("div");
     box.className = "defeat";
-    box.innerHTML = `<h1>Derrotada</h1>`;
+    box.innerHTML = `<h1>${rendicao ? "Rendição" : "Derrotada"}</h1>`;
 
-    // Tela de derrota específica da personagem, maior e centralizada.
-    const defeatImg = image(run.character.defeatImg, { width: "100%", alt: "derrota" });
-    defeatImg.style.maxWidth = "420px";
-    defeatImg.style.margin = "16px auto 0";
-    box.appendChild(defeatImg);
+    // Imagem da tela: rendição usa surrenderImg; derrota usa defeatImg.
+    // (ambas caem no defeatImg se faltarem.)
+    const imgFile = rendicao
+      ? (run.character.surrenderImg || run.character.defeatImg)
+      : run.character.defeatImg;
+    const endImg = image(imgFile, { width: "100%", alt: rendicao ? "rendição" : "derrota" });
+    endImg.style.maxWidth = "420px";
+    endImg.style.margin = "16px auto 0";
+    box.appendChild(endImg);
 
-    const defeatMsg = run.character.defeatMessage
-      || `${run.character.name} foi derrotada — mas não morreu. Ela recomeça.`;
+    // Mensagem: rendição tem a sua; derrota tem a sua.
+    const defeatMsg = rendicao
+      ? (run.character.surrenderMessage
+          || `${run.character.name} abandonou a run — e viverá para tentar de novo.`)
+      : (run.character.defeatMessage
+          || `${run.character.name} foi derrotada — mas não morreu. Ela recomeça.`);
 
     const ouroTexto = result.goldPerdido > 0
       ? `Todo o ouro retido foi perdido (−${result.goldPerdido}).`

@@ -50,6 +50,72 @@ export function openModal({ title = "", bodyNode }) {
   return { dialog, close: () => dialog.close() };
 }
 
+/* Abre um modal com ABAS. topNode é um conteúdo fixo no topo (ex.: um
+   retrato). tabs = [{ label, render: () => DOMNode }]. A 1ª aba fica ativa
+   por default; clicar numa aba troca o conteúdo abaixo dos botões. */
+export function openTabbedModal({ title = "", topNode = null, tabs = [] }) {
+  const body = document.createElement("div");
+  if (topNode) body.appendChild(topNode);
+
+  const tabRow = document.createElement("div");
+  tabRow.className = "modal-tabs";
+
+  const content = document.createElement("div");
+  content.className = "modal-tab-content";
+
+  const btns = [];
+  function select(i) {
+    btns.forEach((b, j) => b.classList.toggle("active", j === i));
+    content.replaceChildren(tabs[i].render());
+  }
+
+  tabs.forEach((tab, i) => {
+    const b = document.createElement("button");
+    b.className = "tab-btn";
+    b.textContent = tab.label;
+    b.onclick = () => select(i);
+    btns.push(b);
+    tabRow.appendChild(b);
+  });
+
+  body.appendChild(tabRow);
+  body.appendChild(content);
+  if (tabs.length) select(0);   // 1ª aba ativa por default
+
+  return openModal({ title, bodyNode: body });
+}
+
+/* Abre um modal de confirmação com dois botões (Sim/Não).
+   onConfirm é chamado só se o jogador confirmar. */
+export function openConfirm({ title = "Confirmar", message = "", confirmLabel = "Sim", cancelLabel = "Não", onConfirm }) {
+  const body = document.createElement("div");
+
+  const msg = document.createElement("p");
+  msg.style.margin = "0 0 16px";
+  msg.style.lineHeight = "1.5";
+  msg.textContent = message;
+  body.appendChild(msg);
+
+  const row = document.createElement("div");
+  row.className = "btn-row";
+  row.style.justifyContent = "flex-end";
+
+  const no = document.createElement("button");
+  no.textContent = cancelLabel;
+
+  const yes = document.createElement("button");
+  yes.className = "danger";
+  yes.textContent = confirmLabel;
+
+  row.appendChild(no);
+  row.appendChild(yes);
+  body.appendChild(row);
+
+  const { close } = openModal({ title, bodyNode: body });
+  no.onclick = () => close();
+  yes.onclick = () => { close(); onConfirm?.(); };
+}
+
 /* Abre uma imagem em tela cheia, com X para fechar. */
 export function openImageModal(src, alt = "") {
   const dialog = document.createElement("dialog");

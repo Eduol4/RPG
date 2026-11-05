@@ -23,7 +23,7 @@ import { getNpc } from "./data/rooms.js";
 import { Save } from "./state.js";
 import { renderInventory } from "./inventory.js";
 import { image } from "./assets.js";
-import { openModal } from "./ui.js";
+import { openTabbedModal, openConfirm } from "./ui.js";
 
 const ICON = { enemy: "⚔️", item: "🎁", npc: "💬", exit: "🚪" };
 const TRANSIENT_MS = 3000;   // quanto tempo cada evento fica visível na barra
@@ -166,9 +166,13 @@ export const RunState = {
     abandon.className = "danger";
     abandon.textContent = "Abandonar run (assumir derrota)";
     abandon.onclick = () => {
-      if (confirm("Abandonar a run? Isso conta como derrota.")) {
-        Game.go("defeat", { run });
-      }
+      openConfirm({
+        title: "Abandonar run",
+        message: "Tem certeza que quer abandonar a run? Isso conta como uma rendição (derrota).",
+        confirmLabel: "Sim, me rendo",
+        cancelLabel: "Não",
+        onConfirm: () => Game.go("defeat", { run, reason: "surrender" }),
+      });
     };
 
     const toMenu = document.createElement("button");
@@ -237,17 +241,13 @@ function renderLogBar(run, cleared, Game) {
   return bar;
 }
 
-/* Modal com o log da sala e o log da run. */
+/* Modal de log com abas: "Logs da sala" (default) e "Logs da run". */
 function openLogModal(run) {
   ensureLogs(run);
-  const body = document.createElement("div");
 
-  const makeSection = (titulo, linhas) => {
+  const logList = (linhas) => {
     const sec = document.createElement("div");
     sec.className = "log-section";
-    const h = document.createElement("h4");
-    h.textContent = titulo;
-    sec.appendChild(h);
     if (linhas.length === 0) {
       const vazio = document.createElement("p");
       vazio.className = "muted";
@@ -264,9 +264,13 @@ function openLogModal(run) {
     return sec;
   };
 
-  body.appendChild(makeSection("Log da sala", run.roomLog));
-  body.appendChild(makeSection("Log da run", run.runLog));
-  openModal({ title: "Log", bodyNode: body });
+  openTabbedModal({
+    title: "Log",
+    tabs: [
+      { label: "Logs da sala", render: () => logList(run.roomLog) },
+      { label: "Logs da run",  render: () => logList(run.runLog) },
+    ],
+  });
 }
 
 function labelFor(poi) {
